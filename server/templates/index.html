@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guild Chat</title>
+    <script>
+        (function(){
+            var t = localStorage.getItem('guildchat-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+            window.__initialTheme = t;
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Lexend:wght@200;400;500;600;700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-theme-dark">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-theme-light" disabled>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+
+    <!-- ── ID Gate ─────────────────────────────────────────────── -->
+    <div class="id-gate" id="id-gate">
+        <div class="id-gate-card">
+            <div class="id-gate-icon">
+                <img src="/static/logo_white.svg" class="theme-logo" width="28" height="28" alt="Guild Chat">
+            </div>
+            <h1 class="id-gate-title">Guild Chat</h1>
+            <p class="id-gate-sub">Enter your user ID to access your workspace.</p>
+
+            <div class="id-input-row">
+                <input
+                    type="text"
+                    id="user-id-input"
+                    class="id-input"
+                    placeholder="user-id"
+                    maxlength="5"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                />
+                <button id="id-submit" class="id-submit-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2.2"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div id="id-feedback" class="id-feedback"></div>
+            <p class="id-hint">Exactly 5 characters · letters, numbers, <span class="mono">-</span> and <span class="mono">_</span></p>
+        </div>
+    </div>
+
+    <!-- Mobile sidebar backdrop -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+    <!-- ── Main App ────────────────────────────────────────────── -->
+    <div class="app-shell hidden" id="app-shell">
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-top">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <img src="/static/logo_white.svg" class="theme-logo" width="20" height="20" alt="">
+                    </div>
+                    <span class="brand-name">Guild Chat</span>
+                    <span class="brand-tag" id="user-badge">—</span>
+                </div>
+
+                <!-- Backend switcher -->
+                <div class="backend-switcher" id="backend-switcher">
+                    <button class="backend-btn active" id="btn-local" data-backend="local">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+                            <path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Local
+                    </button>
+                    <button class="backend-btn" id="btn-openrouter" data-backend="openrouter">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        OpenRouter
+                    </button>
+                </div>
+
+                <button id="new-chat" class="btn-new-chat" title="New session (Ctrl+N)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                    New Session
+                </button>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="section-label">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Sessions
+                </div>
+                <div id="session-list" class="session-list">
+                    <div class="session-empty">No sessions yet</div>
+                </div>
+            </div>
+
+            <div class="memory-panel" id="memory-panel">
+                <button class="memory-toggle" id="memory-toggle" title="Toggle memory bank">
+                    <div class="memory-toggle-left">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span>Memory Bank</span>
+                    </div>
+                    <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none">
+                        <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <div class="memory-body" id="memory-body">
+                    <div id="memory-preview" class="memory-preview">
+                        <div class="memory-loading"><span class="pulse-dot"></span> Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="status-row">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-label">Connecting...</span>
+                </div>
+                <div class="meta-row"><span id="session-id-display" class="mono-text">—</span></div>
+                <div class="meta-row"><span id="message-count" class="mono-text">0 exchanges</span></div>
+                <div class="meta-row">
+                    <button id="switch-user-btn" class="switch-user-btn" title="Switch user">
+                        ⇄ Switch user
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat -->
+        <main class="main-chat">
+            <div class="chat-header">
+                <button class="icon-btn" id="sidebar-toggle" title="Toggle sidebar (Ctrl+B)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                <div class="chat-title" id="chat-title">New Session</div>
+                <div class="header-actions">
+                    <div class="backend-indicator" id="backend-indicator">
+                        <span class="backend-dot"></span>
+                        <span id="backend-label">Local</span>
+                    </div>
+                    <button class="icon-btn" id="settings-toggle" title="Settings">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+                                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" id="theme-toggle" title="Switch theme"></button>
+                </div>
+            </div>
+
+            <div id="chat-messages" class="chat-messages">
+                <div class="welcome-screen">
+                    <div class="welcome-icon">
+                        <img src="/static/logo_white.svg" class="theme-logo" width="40" height="40" alt="">
+                    </div>
+                    <h2 id="welcome-heading">Guild Chat is ready.</h2>
+                    <p id="welcome-sub">Your AI workspace.</p>
+                    <div class="welcome-hints">
+                        <span class="hint">↵ Send</span>
+                        <span class="hint">⇧ ↵ New line</span>
+                        <span class="hint">Esc Clear</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-zone">
+                <div class="input-wrapper">
+                    <textarea id="user-input" placeholder="Message Guild Chat..." rows="1" disabled></textarea>
+                    <button id="send-button" disabled title="Send message">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="currentColor"
+                                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <button id="stop-button" class="stop-btn hidden" title="Stop generation">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor"
+                                  stroke-width="2" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="input-meta">
+                    <span id="typing-indicator" class="typing-indicator hidden">
+                        <span class="typing-dots"><span></span><span></span><span></span></span>
+                        Generating...
+                    </span>
+                    <span class="input-hint" id="input-hint-label">Local inference</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Overlay -->
+    <div class="settings-overlay hidden" id="settings-overlay">
+        <div class="settings-panel">
+            <div class="settings-header">
+                <h3>Settings</h3>
+                <button class="settings-close" id="settings-close" title="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="settings-body">
+
+                <!-- OpenRouter section -->
+                <div class="settings-section">
+                    <label class="settings-label">OpenRouter</label>
+                    <p class="settings-desc">Connect to cloud models via OpenRouter. Your key is stored locally and never sent anywhere except OpenRouter.</p>
+                    <div class="settings-or-row">
+                        <input type="password" id="or-key-input" class="settings-or-input"
+                               placeholder="sk-or-v1-…"
+                               autocomplete="off" spellcheck="false">
+                        <button id="or-key-save" class="settings-or-btn">Save Key</button>
+                    </div>
+                    <div id="or-key-feedback" class="settings-fact-feedback"></div>
+                    <div class="settings-or-model-row">
+                        <label class="settings-sublabel">Model</label>
+                        <input type="text" id="or-model-input" class="settings-or-input"
+                               placeholder="openrouter/auto"
+                               autocomplete="off" spellcheck="false">
+                        <button id="or-model-save" class="settings-or-btn">Save</button>
+                    </div>
+                    <p class="settings-desc" style="margin-top:6px">Default: <code>openrouter/auto</code> — lets OpenRouter pick the best free model. Try <code>google/gemma-3-27b-it:free</code> or any model string from openrouter.ai/models</p>
+                </div>
+
+                <!-- Response Length -->
+                <div class="settings-section">
+                    <label class="settings-label">Response Length</label>
+                    <p class="settings-desc">Adjusts how long and detailed responses are. This is a suggestion to the AI and not a guarantee.</p>
+                    <div class="length-slider-track">
+                        <input type="range" id="length-slider" class="length-slider"
+                               min="0" max="4" step="1" value="1">
+                        <div class="length-slider-stops">
+                            <span></span><span></span><span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <div class="length-labels">
+                        <span>Short</span>
+                        <span>Medium</span>
+                        <span>Long</span>
+                        <span>Extra Long</span>
+                        <span>Epic</span>
+                    </div>
+                    <div class="length-current" id="length-current">Medium</div>
+                </div>
+
+                <!-- Temperature -->
+                <div class="settings-section">
+                    <label class="settings-label">Temperature</label>
+                    <p class="settings-desc">Controls randomness. Lower = more focused, higher = more creative.</p>
+                    <div class="settings-slider-row">
+                        <input type="range" id="temp-slider" class="settings-slider"
+                               min="0" max="1" step="0.05" value="0.7">
+                        <span class="settings-slider-value" id="temp-value">0.70</span>
+                    </div>
+                    <div class="settings-slider-labels">
+                        <span>Precise</span>
+                        <span>Balanced</span>
+                        <span>Creative</span>
+                    </div>
+                </div>
+
+                <!-- Thinking Mode -->
+                <div class="settings-section">
+                    <label class="settings-label">Thinking Mode</label>
+                    <p class="settings-desc">Let the model reason step-by-step before answering. Local models only.</p>
+                    <div class="settings-toggle-row">
+                        <span class="settings-toggle-label">Enable thinking</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="thinking-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="settings-toggle-row">
+                        <span class="settings-toggle-label">Show thoughts in chat</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="show-thoughts-toggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Facts -->
+                <div class="settings-section">
+                    <label class="settings-label">Add a Fact</label>
+                    <p class="settings-desc">Saved to your memory file permanently. 100 characters max.</p>
+                    <div class="settings-fact-row">
+                        <input type="text" id="fact-input" class="settings-fact-input"
+                               placeholder="e.g. The user prefers to be called John"
+                               maxlength="100" autocomplete="off">
+                        <button id="fact-submit" class="settings-fact-btn">Save</button>
+                    </div>
+                    <div id="fact-feedback" class="settings-fact-feedback"></div>
+                    <div id="fact-list" class="settings-fact-list"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function(){
+            var src = (window.__initialTheme || 'dark') === 'dark' ? '/static/logo_white.svg' : '/static/logo_black.svg';
+            document.querySelectorAll('.theme-logo').forEach(function(img){ img.src = src; });
+        })();
+    </script>
+    <script src="/static/script.js"></script>
+</body>
+</html>
