@@ -1,0 +1,86 @@
+name: Production Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup environment
+      run: bash setup.sh
+
+    - name: Pull model
+      run: bash model_pull.sh
+
+    - name: Setup ngrok
+      run: |
+        wget -q https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
+        sudo tar xzf ngrok-v3-stable-linux-amd64.tgz -C /usr/local/bin
+        rm ngrok-v3-stable-linux-amd64.tgz
+        ngrok config add-authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+        pkill ngrok 2>/dev/null || true
+        sleep 1
+        ngrok http 8000 --log=stdout > /tmp/ngrok.log 2>&1 &
+        sleep 5
+        NGROK_URL=$(curl -s http://localhost:4040/api/tunnels \
+          | python3 -c "import sys,json; print(json.load(sys.stdin)['tunnels'][0]['public_url'])")
+        echo "NGROK_URL=$NGROK_URL" >> $GITHUB_ENV
+        echo "================================================"
+        echo "✅ NGROK TUNNEL ESTABLISHED"
+        echo "🌐 Public URL: $NGROK_URL"
+        echo "================================================"
+
+    - name: Launch server + keep alive
+      run: |
+        echo "🚀 Starting Local Chat..."
+        echo "📡 Access via: ${{ env.NGROK_URL }}"
+
+        # run.sh launches uvicorn; we run it in the background here
+        # so we can add the keepalive loop below
+        bash run.sh --lan &
+        SERVER_PID=$!
+
+        # Wait for server to come up
+        for i in $(seq 1 30); do
+          if curl -s http://localhost:8000 > /dev/null 2>&1; then
+            echo "✅ Server is up (attempt $i)"
+            break
+          fi
+          echo "  ⏳ attempt $i/30..."
+          sleep 2
+        done
+
+        echo ""
+        echo "================================================"
+        echo "🌐 Local Chat is live at: ${{ env.NGROK_URL }}"
+        echo "================================================"
+
+        # Keepalive loop — restart server or tunnel if either dies
+        while true; do
+          sleep 60
+          echo "[$(date '+%H:%M:%S')] Running — ${{ env.NGROK_URL }}"
+
+          if ! curl -s http://localhost:4040/api/tunnels > /dev/null 2>&1; then
+            echo "⚠️  ngrok tunnel lost — restarting..."
+            pkill ngrok 2>/dev/null || true
+            sleep 1
+            ngrok http 8000 --log=stdout > /tmp/ngrok.log 2>&1 &
+            sleep 5
+            NEW_URL=$(curl -s http://localhost:4040/api/tunnels \
+              | python3 -c "import sys,json; print(json.load(sys.stdin)['tunnels'][0]['public_url'])" 2>/dev/null || echo "unknown")
+            echo "🔄 New URL: $NEW_URL"
+          fi
+
+          if ! kill -0 $SERVER_PID 2>/dev/null; then
+            echo "⚠️  Server died — restarting..."
+            bash run.sh --lan &
+            SERVER_PID=$!
+            echo "🔄 Server restarted (PID $SERVER_PID)"
+          fi
+        done
