@@ -68,26 +68,26 @@
     --font-mono:    'JetBrains Mono', monospace;
 }
 
-/* ── Botanical Theme ───────────────────────────────────────── */
+/* ── Botanical Theme — Tropical Jungle ─────────────────────── */
 [data-theme="botanical"] {
-    /* Backgrounds — deep jungle black */
-    --bg-base:       #050a04;
-    --bg-surface:    #091208;
-    --bg-elevated:   #0e1a0c;
-    --bg-hover:      #132212;
-    --bg-active:     #192d17;
-    --bg-inset:      #0b1609;
+    /* Backgrounds — rich mid-tone jungle green */
+    --bg-base:       #173d26;
+    --bg-surface:    #1a4a2e;
+    --bg-elevated:   #1f5c38;
+    --bg-hover:      #256b42;
+    --bg-active:     #2b7a4c;
+    --bg-inset:      #153822;
 
-    /* Jungle green accent */
-    --accent-dim:    #0e4020;
-    --accent-mid:    #1f7a40;
-    --accent-core:   #2da653;
-    --accent-bright: #3dca68;
-    --accent-glow:   #72e896;
+    /* Tree frog yellow-green accent */
+    --accent-dim:    #4a7a10;
+    --accent-mid:    #7ab81a;
+    --accent-core:   #a8e63d;
+    --accent-bright: #c4f55a;
+    --accent-glow:   #d8ff80;
 
-    /* Earthy amber highlight */
-    --gold:          #c8852a;
-    --gold-dim:      #6b420d;
+    /* Tiger/flower coral-orange highlight */
+    --gold:          #ff6b35;
+    --gold-dim:      #8a3010;
 
     /* Aliases */
     --blue-dim:      var(--accent-dim);
@@ -96,21 +96,21 @@
     --blue-bright:   var(--accent-bright);
     --blue-glow:     var(--accent-glow);
 
-    /* Text */
-    --text-primary:  #d4edd8;
-    --text-secondary:#7aaa80;
-    --text-muted:    #3a6040;
+    /* Text — warm cream, pops off green */
+    --text-primary:  #f5f0e0;
+    --text-secondary:#c8e8a0;
+    --text-muted:    #6aaa70;
     --text-accent:   var(--accent-bright);
 
     /* Borders */
-    --border-subtle: rgba(45, 166, 83, 0.12);
-    --border-mid:    rgba(45, 166, 83, 0.22);
-    --border-accent: rgba(45, 166, 83, 0.45);
+    --border-subtle: rgba(168, 230, 61, 0.15);
+    --border-mid:    rgba(168, 230, 61, 0.28);
+    --border-accent: rgba(168, 230, 61, 0.55);
 
-    /* Status */
-    --green:  #3dca68;
-    --red:    #f05e5e;
-    --amber:  #c8852a;
+    /* Status — vivid pops */
+    --green:  #c4f55a;
+    --red:    #ff4d4d;
+    --amber:  #ff6b35;
 
     /* Geometry — same */
     --radius-sm:  4px;
@@ -889,18 +889,72 @@ body {
    ADDITIONS: Light mode, stop button, CSS cursor, theme toggle
    ============================================================ */
 
-/* ── Botanical message bubble override ─────────────────────── */
+/* ── Botanical overrides — jungle mid-tone needs some tuning ── */
 [data-theme="botanical"] .message-row.assistant .bubble-content {
-    border-color: rgba(45, 166, 83, 0.15);
+    background: #1f5c38;
+    border-color: rgba(168, 230, 61, 0.2);
+    color: var(--text-primary);
 }
 
+[data-theme="botanical"] .message-row.user .message-bubble {
+    background: #256b42;
+}
+
+/* Code blocks — deep canopy shadow so they pop */
+[data-theme="botanical"] pre,
+[data-theme="botanical"] pre code {
+    background: #0f2d1a !important;
+    color: #c4f55a;
+}
+
+/* Input wrapper — slightly darker so text is clear */
+[data-theme="botanical"] .input-wrapper {
+    background: #153822;
+    border-color: rgba(168, 230, 61, 0.25);
+}
+
+[data-theme="botanical"] #user-input {
+    color: #f5f0e0;
+}
+
+/* Settings panel */
 [data-theme="botanical"] .settings-panel {
-    background: #0e1a0c;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(45, 166, 83, 0.12);
+    background: #1a4a2e;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(168, 230, 61, 0.15);
 }
 
 [data-theme="botanical"] .settings-overlay {
     background: rgba(0, 0, 0, 0.55);
+}
+
+/* Sidebar slightly darker than base for contrast */
+[data-theme="botanical"] .sidebar {
+    background: #153822;
+    border-right-color: rgba(168, 230, 61, 0.15);
+}
+
+/* Send button — coral/orange tiger pop */
+[data-theme="botanical"] #send-button {
+    background: linear-gradient(135deg, #cc4a1a, #ff6b35);
+    box-shadow: 0 2px 10px rgba(255, 107, 53, 0.4);
+}
+
+/* New session button — coral accent */
+[data-theme="botanical"] .btn-new-chat {
+    background: linear-gradient(135deg, #cc4a1a, #ff6b35);
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+}
+
+/* Active backend button — coral */
+[data-theme="botanical"] .backend-btn.active {
+    background: linear-gradient(135deg, #cc4a1a, #ff6b35);
+    box-shadow: 0 2px 10px rgba(255, 107, 53, 0.35);
+}
+
+/* Session items active state */
+[data-theme="botanical"] .session-item.active {
+    background: rgba(168, 230, 61, 0.12);
+    border-left-color: var(--accent-bright);
 }
 
 [data-theme="light"] .chat-messages {
