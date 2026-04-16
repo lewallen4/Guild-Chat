@@ -1,50 +1,54 @@
 /* ============================================================
-   Guild Chat — Dark Mode UI
-   Hot pink, bold, high-contrast
+   Guild Chat — Dual Theme UI
+   Ocean: Sea of Thieves teal/gold/navy
+   Botanical: Rainforest deep green/amber
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Lexend:wght@200;400;500;600;700&family=Syne:wght@600;700&display=swap');
 
-/* ── Variables ─────────────────────────────────────────────── */
-:root {
-    /* Core palette — near-black backgrounds */
-    --bg-base:       #0a0008;
-    --bg-surface:    #0f000d;
-    --bg-elevated:   #160012;
-    --bg-hover:      #1e0018;
-    --bg-active:     #260020;
-    --bg-inset:      #1a0016;
+/* ── Ocean Theme (default) ─────────────────────────────────── */
+[data-theme="ocean"], :root {
+    /* Backgrounds — deep navy-black */
+    --bg-base:       #040d12;
+    --bg-surface:    #071520;
+    --bg-elevated:   #0c1f2e;
+    --bg-hover:      #112738;
+    --bg-active:     #163040;
+    --bg-inset:      #091a27;
 
-    /* Pink accent system */
-    --pink-dim:      #5c0040;
-    --pink-mid:      #b5006e;
-    --pink-core:     #e8007f;
-    --pink-bright:   #ff2d9b;
-    --pink-glow:     #ff80c8;
-    --pink-soft:     #ffb3dd;
+    /* Teal accent — Sea of Thieves */
+    --accent-dim:    #0d4a3e;
+    --accent-mid:    #1a8a74;
+    --accent-core:   #2cb49c;
+    --accent-bright: #4ecfb8;
+    --accent-glow:   #80d5ad;
 
-    /* Aliases used throughout — map blue vars to pink so inherited rules work */
-    --blue-dim:      var(--pink-dim);
-    --blue-mid:      var(--pink-mid);
-    --blue-core:     var(--pink-core);
-    --blue-bright:   var(--pink-bright);
-    --blue-glow:     var(--pink-glow);
+    /* Gold highlight */
+    --gold:          #fbb924;
+    --gold-dim:      #7a5610;
 
-    /* Text hierarchy */
-    --text-primary:  #fce8f3;
-    --text-secondary:#c47fa8;
-    --text-muted:    #6b3d58;
-    --text-accent:   var(--pink-bright);
+    /* Aliases for inherited rules */
+    --blue-dim:      var(--accent-dim);
+    --blue-mid:      var(--accent-mid);
+    --blue-core:     var(--accent-core);
+    --blue-bright:   var(--accent-bright);
+    --blue-glow:     var(--accent-glow);
+
+    /* Text */
+    --text-primary:  #d8efe8;
+    --text-secondary:#7ab8a8;
+    --text-muted:    #3a6a5e;
+    --text-accent:   var(--accent-bright);
 
     /* Borders */
-    --border-subtle: rgba(232, 0, 127, 0.12);
-    --border-mid:    rgba(232, 0, 127, 0.22);
-    --border-accent: rgba(232, 0, 127, 0.45);
+    --border-subtle: rgba(44, 180, 156, 0.12);
+    --border-mid:    rgba(44, 180, 156, 0.22);
+    --border-accent: rgba(44, 180, 156, 0.45);
 
     /* Status */
     --green:  #2dd4a0;
     --red:    #f05e5e;
-    --amber:  #f5a623;
+    --amber:  #fbb924;
 
     /* Geometry */
     --radius-sm:  4px;
@@ -61,7 +65,63 @@
     /* Fonts */
     --font-ui:      'Lexend', sans-serif;
     --font-display: 'Syne', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --font-mono:    'JetBrains Mono', monospace;
+}
+
+/* ── Botanical Theme ───────────────────────────────────────── */
+[data-theme="botanical"] {
+    /* Backgrounds — deep jungle black */
+    --bg-base:       #050a04;
+    --bg-surface:    #091208;
+    --bg-elevated:   #0e1a0c;
+    --bg-hover:      #132212;
+    --bg-active:     #192d17;
+    --bg-inset:      #0b1609;
+
+    /* Jungle green accent */
+    --accent-dim:    #0e4020;
+    --accent-mid:    #1f7a40;
+    --accent-core:   #2da653;
+    --accent-bright: #3dca68;
+    --accent-glow:   #72e896;
+
+    /* Earthy amber highlight */
+    --gold:          #c8852a;
+    --gold-dim:      #6b420d;
+
+    /* Aliases */
+    --blue-dim:      var(--accent-dim);
+    --blue-mid:      var(--accent-mid);
+    --blue-core:     var(--accent-core);
+    --blue-bright:   var(--accent-bright);
+    --blue-glow:     var(--accent-glow);
+
+    /* Text */
+    --text-primary:  #d4edd8;
+    --text-secondary:#7aaa80;
+    --text-muted:    #3a6040;
+    --text-accent:   var(--accent-bright);
+
+    /* Borders */
+    --border-subtle: rgba(45, 166, 83, 0.12);
+    --border-mid:    rgba(45, 166, 83, 0.22);
+    --border-accent: rgba(45, 166, 83, 0.45);
+
+    /* Status */
+    --green:  #3dca68;
+    --red:    #f05e5e;
+    --amber:  #c8852a;
+
+    /* Geometry — same */
+    --radius-sm:  4px;
+    --radius-md:  8px;
+    --radius-lg:  14px;
+    --radius-xl:  20px;
+    --sidebar-w:  280px;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --font-ui:      'Lexend', sans-serif;
+    --font-display: 'Syne', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
 }
 
 /* ── Reset ─────────────────────────────────────────────────── */
@@ -153,7 +213,7 @@ body {
     font-size: 0.6rem;
     font-weight: 500;
     color: var(--blue-bright);
-    background: rgba(232, 0, 127, 0.15);
+    background: rgba(44, 180, 156, 0.15);
     border: 1px solid var(--border-accent);
     border-radius: 3px;
     padding: 2px 5px;
@@ -600,7 +660,7 @@ body {
 
 .input-wrapper:focus-within {
     border-color: var(--blue-core);
-    box-shadow: 0 0 0 3px rgba(232, 0, 127, 0.12);
+    box-shadow: 0 0 0 3px rgba(44, 180, 156, 0.12);
 }
 
 #user-input {
@@ -760,49 +820,18 @@ body {
    ADDITIONS: Light mode, stop button, CSS cursor, theme toggle
    ============================================================ */
 
-/* ── Light mode overrides ──────────────────────────────────── */
-[data-theme="light"] {
-    --bg-base:       #fff0f7;
-    --bg-surface:    #ffffff;
-    --bg-elevated:   #ffe0f0;
-    --bg-hover:      #ffd0e8;
-    --bg-active:     #ffbedd;
-    --bg-inset:      #ffeaf4;
-
-    --pink-dim:      #f9c8e2;
-    --pink-mid:      #d4007a;
-    --pink-core:     #c0006b;
-    --pink-bright:   #a8005c;
-    --pink-glow:     #8c004d;
-
-    --blue-dim:      var(--pink-dim);
-    --blue-mid:      var(--pink-mid);
-    --blue-core:     var(--pink-core);
-    --blue-bright:   var(--pink-bright);
-    --blue-glow:     var(--pink-glow);
-
-    --text-primary:  #1a0010;
-    --text-secondary:#7a1048;
-    --text-muted:    #b87ca0;
-    --text-accent:   var(--pink-core);
-
-    --border-subtle: rgba(192, 0, 107, 0.10);
-    --border-mid:    rgba(192, 0, 107, 0.18);
-    --border-accent: rgba(192, 0, 107, 0.35);
-
-    --green:  #0f9c6e;
-    --red:    #d63b3b;
-    --amber:  #c47d0a;
+/* ── Botanical message bubble override ─────────────────────── */
+[data-theme="botanical"] .message-row.assistant .bubble-content {
+    border-color: rgba(45, 166, 83, 0.15);
 }
 
-[data-theme="light"] .message-row.assistant .bubble-content {
-    background: #ffffff;
-    border-color: rgba(192, 0, 107, 0.15);
-    color: var(--text-primary);
+[data-theme="botanical"] .settings-panel {
+    background: #0e1a0c;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(45, 166, 83, 0.12);
 }
 
-[data-theme="light"] .input-wrapper {
-    background: #ffffff;
+[data-theme="botanical"] .settings-overlay {
+    background: rgba(0, 0, 0, 0.55);
 }
 
 [data-theme="light"] .chat-messages {
@@ -973,7 +1002,7 @@ body {
 }
 
 .session-item.active .session-item-icon {
-    background: rgba(232, 0, 127, 0.15);
+    background: rgba(44, 180, 156, 0.15);
     border-color: var(--border-accent);
     color: var(--blue-bright);
 }
@@ -1269,8 +1298,8 @@ body {
 }
 
 .continue-session-btn:hover {
-    background: rgba(232, 0, 127, 0.12);
-    box-shadow: 0 0 16px rgba(232, 0, 127, 0.2);
+    background: rgba(44, 180, 156, 0.12);
+    box-shadow: 0 0 16px rgba(44, 180, 156, 0.2);
     transform: translateY(-1px);
 }
 
@@ -1317,7 +1346,7 @@ body {
     margin: 0.5em 0;
     padding: 0.3em 0.8em;
     border-left: 3px solid var(--blue-core);
-    background: rgba(232, 0, 127, 0.06);
+    background: rgba(44, 180, 156, 0.06);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     color: var(--text-secondary);
 }
@@ -1436,7 +1465,7 @@ body {
     border-left: 3px solid var(--blue-core);
     border-radius: 0 var(--radius-md, 8px) var(--radius-md, 8px) 0;
     overflow: hidden;
-    background: rgba(232, 0, 127, 0.06);
+    background: rgba(44, 180, 156, 0.06);
 }
 
 .think-block summary {
@@ -1462,7 +1491,7 @@ body {
     transform: rotate(90deg);
 }
 .think-block summary:hover {
-    background: rgba(232, 0, 127, 0.1);
+    background: rgba(44, 180, 156, 0.1);
 }
 
 .think-body {
@@ -1470,7 +1499,7 @@ body {
     font-size: 0.82em;
     line-height: 1.6;
     color: var(--text-secondary);
-    border-top: 1px solid rgba(232, 0, 127, 0.15);
+    border-top: 1px solid rgba(44, 180, 156, 0.15);
     white-space: pre-wrap;
     max-height: 300px;
     overflow-y: auto;
@@ -1484,8 +1513,8 @@ body {
     background: #f0f2f5;
 }
 [data-theme="light"] .think-block {
-    background: rgba(192, 0, 107, 0.05);
-    border-color: rgba(192, 0, 107, 0.2);
+    background: rgba(44, 180, 156, 0.05);
+    border-color: rgba(44, 180, 156, 0.2);
     border-left-color: var(--blue-core);
 }
 [data-theme="light"] .think-body {
@@ -1513,7 +1542,7 @@ body {
     max-width: 530px;
     max-height: 85vh;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(232, 0, 127, 0.15);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(44, 180, 156, 0.15);
 }
 
 .settings-header {
@@ -1594,7 +1623,7 @@ body {
     background: var(--blue-core);
     border: 2px solid var(--blue-bright);
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(192, 0, 107, 0.3);
+    box-shadow: 0 2px 6px rgba(44, 180, 156, 0.3);
 }
 .settings-slider::-moz-range-thumb {
     width: 18px;
@@ -1673,13 +1702,13 @@ body {
     transition: transform 0.2s, background 0.2s;
 }
 .toggle-switch input:checked + .toggle-slider {
-    background: rgba(232, 0, 127, 0.25);
+    background: rgba(44, 180, 156, 0.25);
     border-color: var(--blue-core);
 }
 .toggle-switch input:checked + .toggle-slider::before {
     transform: translateX(20px);
     background: var(--blue-bright);
-    box-shadow: 0 0 6px rgba(232, 0, 127, 0.4);
+    box-shadow: 0 0 6px rgba(44, 180, 156, 0.4);
 }
 
 /* Fact input */
@@ -1835,7 +1864,7 @@ body {
     background: var(--blue-core);
     border: 2px solid var(--blue-bright);
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(192, 0, 107, 0.3);
+    box-shadow: 0 2px 6px rgba(44, 180, 156, 0.3);
 }
 
 .length-slider::-moz-range-thumb {
@@ -1901,9 +1930,9 @@ body {
 }
 
 .backend-btn.active {
-    background: linear-gradient(135deg, var(--pink-mid), var(--pink-core));
+    background: linear-gradient(135deg, var(--accent-mid), var(--accent-core));
     color: white;
-    box-shadow: 0 2px 10px rgba(232, 0, 127, 0.35);
+    box-shadow: 0 2px 10px rgba(44, 180, 156, 0.35);
 }
 
 /* ── Backend indicator in header ──────────────────────────── */
@@ -1923,22 +1952,22 @@ body {
 
 .backend-indicator.openrouter {
     border-color: var(--border-accent);
-    box-shadow: 0 0 10px rgba(232, 0, 127, 0.15);
+    box-shadow: 0 0 10px rgba(44, 180, 156, 0.15);
 }
 
 .backend-dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--pink-bright);
-    box-shadow: 0 0 6px var(--pink-bright);
-    animation: pulse-pink 2s ease-in-out infinite;
+    background: var(--accent-bright);
+    box-shadow: 0 0 6px var(--accent-bright);
+    animation: pulse-accent 2s ease-in-out infinite;
     flex-shrink: 0;
 }
 
-@keyframes pulse-pink {
-    0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--pink-bright); }
-    50%       { opacity: 0.6; box-shadow: 0 0 2px var(--pink-bright); }
+@keyframes pulse-accent {
+    0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--accent-bright); }
+    50%       { opacity: 0.6; box-shadow: 0 0 2px var(--accent-bright); }
 }
 
 /* ── OpenRouter settings rows ─────────────────────────────── */
@@ -1977,13 +2006,13 @@ body {
 }
 
 .settings-or-input:focus {
-    border-color: var(--pink-core);
-    box-shadow: 0 0 0 3px rgba(232, 0, 127, 0.12);
+    border-color: var(--accent-core);
+    box-shadow: 0 0 0 3px rgba(44, 180, 156, 0.12);
 }
 
 .settings-or-btn {
     padding: 7px 14px;
-    background: linear-gradient(135deg, var(--pink-mid), var(--pink-core));
+    background: linear-gradient(135deg, var(--accent-mid), var(--accent-core));
     border: none;
     border-radius: var(--radius-sm);
     color: white;
