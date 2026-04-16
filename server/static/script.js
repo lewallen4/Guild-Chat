@@ -130,43 +130,58 @@ function highlightCode(container) {
 
 // ── Theme ──────────────────────────────────────────────────────────
 function initTheme() {
-    const saved = localStorage.getItem('guildchat-theme') || 'dark';
+    const saved = localStorage.getItem('guildchat-theme') || 'ocean';
     applyTheme(saved);
 }
 
 function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('guildchat-theme', theme);
+
+    // Both themes use white logos — always light text on dark bg
+    document.querySelectorAll('.theme-logo').forEach(img => {
+        img.src = '/static/logo_white.svg';
+    });
+
+    // Swap highlight.js theme — github-dark works for both
     const darkSheet  = document.getElementById('hljs-theme-dark');
     const lightSheet = document.getElementById('hljs-theme-light');
     if (darkSheet && lightSheet) {
-        darkSheet.disabled  = (theme === 'light');
-        lightSheet.disabled = (theme === 'dark');
+        darkSheet.disabled  = false;
+        lightSheet.disabled = true;
     }
-    const logoSrc = theme === 'dark' ? '/static/logo_white.svg' : '/static/logo_black.svg';
-    document.querySelectorAll('.theme-logo').forEach(img => { img.src = logoSrc; });
 
     if (themeToggle) {
-        themeToggle.title     = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
-        themeToggle.innerHTML = theme === 'dark' ? sunIcon() : moonIcon();
+        if (theme === 'ocean') {
+            themeToggle.title     = 'Switch to Botanical';
+            themeToggle.innerHTML = botanicalIcon();
+        } else {
+            themeToggle.title     = 'Switch to Ocean';
+            themeToggle.innerHTML = oceanIcon();
+        }
     }
 }
 
 function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || 'dark';
-    applyTheme(current === 'dark' ? 'light' : 'dark');
+    const current = document.documentElement.getAttribute('data-theme') || 'ocean';
+    applyTheme(current === 'ocean' ? 'botanical' : 'ocean');
 }
 
-function sunIcon() {
+function oceanIcon() {
     return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/>
-        <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M2 12c1.5-2 3.5-3 5-3s3.5 1 5 1 3.5-1 5-1 3.5 1 5 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M2 17c1.5-2 3.5-3 5-3s3.5 1 5 1 3.5-1 5-1 3.5 1 5 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M12 2v4M8 3.5l2 3M16 3.5l-2 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     </svg>`;
 }
 
-function moonIcon() {
+function botanicalIcon() {
     return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12 22V12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M12 12C12 12 7 10 5 6c4 0 7 2 7 6z" fill="currentColor" opacity="0.4"/>
+        <path d="M12 12C12 12 17 10 19 6c-4 0-7 2-7 6z" fill="currentColor" opacity="0.4"/>
+        <path d="M12 16C12 16 8 14 6 10c4 1 6 3 6 6z" fill="currentColor" opacity="0.6"/>
+        <path d="M12 16C12 16 16 14 18 10c-4 1-6 3-6 6z" fill="currentColor" opacity="0.6"/>
     </svg>`;
 }
 
@@ -380,8 +395,7 @@ async function endCurrentSession() {
 }
 
 function currentLogoSrc() {
-    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
-    return theme === 'dark' ? '/static/logo_white.svg' : '/static/logo_black.svg';
+    return '/static/logo_white.svg';
 }
 
 async function switchToNewSession() {
