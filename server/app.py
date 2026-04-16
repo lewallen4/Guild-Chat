@@ -148,9 +148,14 @@ async def end_session(session_id: str):
         return
 
     sm: SessionManager = session_data["session_manager"]
+    user_id = session_data.get("user_id", "")
+    user_settings = _load_settings(user_id)
     summary = await summarizer.summarize_session(
         session_data["messages"],
         session_data.get("context_memory", ""),
+        openrouter_key=user_settings.get("openrouter_key", ""),
+        openrouter_model=user_settings.get("openrouter_model", "openrouter/auto"),
+        prefer_openrouter=(user_settings.get("backend", "local") == "openrouter"),
     )
     sm.save_to_memory(summary, session_data["messages"])
     sm.save_session_log(session_id, session_data)
