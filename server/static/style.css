@@ -784,29 +784,98 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--bg-active); border-radius: 8px; }
 
 /* ── Responsive ────────────────────────────────────────────── */
-@media (max-width: 680px) {
-    :root { --sidebar-w: 260px; }
+@media (max-width: 768px) {
+
+    :root { --sidebar-w: 85vw; }
 
     .sidebar {
-        position: absolute;
+        position: fixed;
         top: 0; left: 0; bottom: 0;
-        z-index: 50;
-        transform: translateX(0);
+        width: 85vw;
+        min-width: 0;
+        max-width: 360px;
+        z-index: 100;
+        transform: translateX(-100%);
         transition: transform 0.3s var(--ease);
+        box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+    }
+
+    .sidebar:not(.collapsed) {
+        transform: translateX(0);
     }
 
     .sidebar.collapsed {
         transform: translateX(-100%);
-        width: var(--sidebar-w);
-        min-width: var(--sidebar-w);
+        width: 85vw;
+        min-width: 0;
         border-right: 1px solid var(--border-subtle);
     }
 
-    .message-row.user,
-    .message-row.assistant {
-        max-width: 90%;
+    /* Backdrop — real div so JS can listen to taps */
+    .sidebar-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 99;
     }
+
+    .sidebar-backdrop.active {
+        display: block;
+    }
+
+    .main-chat {
+        width: 100vw;
+        min-width: 0;
+    }
+
+    .chat-header {
+        padding: 0 12px;
+        gap: 10px;
+        height: 52px;
+    }
+
+    .sidebar-toggle { display: flex; }
+
+    .model-badge, .backend-indicator { display: none; }
+
+    .chat-title { font-size: 0.8rem; }
+
+    .chat-messages { padding: 16px 12px; }
+
+    .message-row.user,
+    .message-row.assistant { max-width: 95%; }
+
+    .bubble-content { font-size: 0.88rem; line-height: 1.6; }
+
+    .input-zone { padding: 10px 12px 14px; }
+
+    .input-wrapper { padding: 10px 12px; gap: 8px; }
+
+    #user-input { font-size: 1rem; min-height: 32px; }
+
+    #send-button, #stop-button { width: 34px; height: 34px; flex-shrink: 0; }
+
+    .memory-panel { flex-shrink: 0; }
+    .memory-body { max-height: 80px; }
+    .memory-preview { font-size: 0.65rem; padding: 8px; max-height: 70px; overflow-y: auto; }
+
+    .sidebar-footer { padding: 10px 14px; gap: 4px; }
+    .meta-row { padding-left: 10px; }
+
+    .settings-overlay { align-items: flex-end; padding: 0; }
+    .settings-panel {
+        width: 100%;
+        max-width: 100%;
+        max-height: 88vh;
+        border-radius: 16px 16px 0 0;
+        overflow-y: auto;
+    }
+
+    .welcome-screen { padding: 40px 20px; }
+    .welcome-hints { flex-wrap: wrap; gap: 8px; justify-content: center; }
 }
+
 
 /* ── Utility ────────────────────────────────────────────────── */
 .sr-only {
