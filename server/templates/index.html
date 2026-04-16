@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="ocean">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guild Chat</title>
     <script>
         (function(){
-            var t = localStorage.getItem('guildchat-theme') || 'dark';
+            var t = localStorage.getItem('guildchat-theme') || 'ocean';
             document.documentElement.setAttribute('data-theme', t);
             window.__initialTheme = t;
         })();
@@ -324,7 +324,7 @@
 
     <script>
         (function(){
-            var src = (window.__initialTheme || 'dark') === 'dark' ? '/static/logo_white.svg' : '/static/logo_black.svg';
+            var src = '/static/logo_white.svg';
             document.querySelectorAll('.theme-logo').forEach(function(img){ img.src = src; });
         })();
     </script>
