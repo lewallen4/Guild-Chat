@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-#  Guild Chat — Server Launch
+#  Skye-AI — Server Launch
 #  Supports: Ubuntu/Debian, RHEL/CentOS/Fedora, macOS
 #  Usage: bash run.sh [--port 8000] [--lan] [--dev]
 #         bash run.sh --help
@@ -17,7 +17,7 @@ RESET='\033[0m'
 
 # ── Defaults ───────────────────────────────────────────────────────
 HOST="127.0.0.1"
-PORT="8001"
+PORT="8000"
 WORKERS="1"
 MODEL_FILE="model.gguf"
 LOG_LEVEL="info"
@@ -27,7 +27,7 @@ RELOAD="false"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVER_DIR="$SCRIPT_DIR/server"
 MODELS_DIR="$SERVER_DIR/models"
-VENV_DIR="$HOME/.guildchat-venv"
+VENV_DIR="$HOME/.localchat-venv"
 PYTHON="$VENV_DIR/bin/python"
 
 # ── Helpers ────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ usage() {
     echo "Usage: bash run.sh [OPTIONS]"
     echo ""
     echo "  --host HOST     Bind address     (default: 127.0.0.1)"
-    echo "  --port PORT     Port number      (default: 8001)"
+    echo "  --port PORT     Port number      (default: 8000)"
     echo "  --lan           Expose on LAN    (sets host to 0.0.0.0)"
     echo "  --dev           Hot-reload + debug logging"
     echo "  --model FILE    Model filename in server/models/"
@@ -66,7 +66,7 @@ done
 # ── Banner ─────────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}${BOLD}╔══════════════════════════════════════════╗${RESET}"
-echo -e "${CYAN}${BOLD}║           Guild Chat  —  Server             ║${RESET}"
+echo -e "${CYAN}${BOLD}║           Skye-AI  —  Server             ║${RESET}"
 echo -e "${CYAN}${BOLD}╚══════════════════════════════════════════╝${RESET}"
 
 # ── Pre-flight checks ──────────────────────────────────────────────
@@ -166,8 +166,8 @@ get_lan_ip() {
 }
 
 # ── Export env vars ────────────────────────────────────────────────
-export GUILDCHAT_MODEL_PATH="$MODEL_PATH"
-export GUILDCHAT_MEMORY_PATH="$MODELS_DIR/memory.md"
+export LOCALCHAT_MODEL_PATH="$MODEL_PATH"
+export LOCALCHAT_MEMORY_PATH="$MODELS_DIR/memory.md"
 # Keep Haven-named vars for backward compat with app.py
 export HAVEN_MODEL_PATH="$MODEL_PATH"
 export HAVEN_MEMORY_PATH="$MODELS_DIR/memory.md"
@@ -203,7 +203,7 @@ echo ""
 # ── Clean shutdown trap ────────────────────────────────────────────
 cleanup() {
     echo ""
-    echo -e "${YELLOW}Shutting down Guild Chat...${RESET}"
+    echo -e "${YELLOW}Shutting down Skye-AI...${RESET}"
     echo "Session memory preserved in server/models/"
     echo ""
 }
