@@ -1,16 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-#  Skye-AI — Environment Setup
+#  Guild Chat — Environment Setup
 #  Safe to re-run at any time. Self-healing — detects and
-#  offers to install any missing system dependencies before
-#  proceeding. Never requires a manual retry.
+#  installs any missing system dependencies automatically.
+#  Never prompts for permission.
 #
 #  Supports: Ubuntu/Debian, RHEL/CentOS/Fedora, macOS (brew)
 #  Usage: bash setup.sh
 # ============================================================
 
-# Intentionally no set -e — individual failures are caught
-# and recovered from rather than aborting the whole script.
 set -uo pipefail
 
 CYAN='\033[0;36m'
@@ -23,14 +21,17 @@ RESET='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVER_DIR="$SCRIPT_DIR/server"
 MODELS_DIR="$SERVER_DIR/models"
-VENV_DIR="$HOME/.localchat-venv"
+VENV_DIR="$HOME/.guildchat-venv"
 SETUP_OK=true
+
+PYTHON_TARGET="3.12"
+PYTHON_BIN=""   # resolved later
 
 # ── Helpers ────────────────────────────────────────────────────────
 banner() {
     echo ""
     echo -e "${CYAN}${BOLD}╔══════════════════════════════════════════╗${RESET}"
-    echo -e "${CYAN}${BOLD}║          Skye-AI  —  Setup               ║${RESET}"
+    echo -e "${CYAN}${BOLD}║          Guild Chat  —  Setup               ║${RESET}"
     echo -e "${CYAN}${BOLD}╚══════════════════════════════════════════╝${RESET}"
     echo ""
 }
@@ -40,7 +41,6 @@ ok()    { echo -e "  ${GREEN}✓${RESET}  $1"; }
 warn()  { echo -e "  ${YELLOW}⚠${RESET}   $1"; }
 die()   { echo -e "\n${RED}✗ Fatal:${RESET} $1\n"; exit 1; }
 fail()  { echo -e "  ${RED}✗${RESET}  $1"; SETUP_OK=false; }
-ask()   { read -rp "    → $1 (y/N): " _REPLY; [[ "$_REPLY" =~ ^[Yy]$ ]]; }
 
 # ── Package manager detection ──────────────────────────────────────
 detect_pm() {
@@ -55,8 +55,7 @@ detect_pm() {
     ok "Package manager: $PM"
 }
 
-# ── Install a system package (prompts first) ───────────────────────
-# Args: description  apt-pkg  dnf/yum-pkg  brew-pkg
+# ── Install a system package silently ─────────────────────────────
 install_pkg() {
     local DESC="$1"
     local APT_PKG="${2:-}"
@@ -65,42 +64,37 @@ install_pkg() {
     local ZYPPER_PKG="${5:-$DNF_PKG}"
     local PACMAN_PKG="${6:-$APT_PKG}"
 
-    warn "$DESC is not installed."
-    if ! ask "Attempt to install it now?"; then
-        fail "$DESC skipped. Some steps may not complete."
-        return 1
-    fi
+    echo -e "  ${CYAN}→${RESET}  Installing $DESC..."
 
-    echo ""
     case "$PM" in
         apt)
-            sudo apt-get update -qq \
-                && sudo apt-get install -y $APT_PKG \
+            sudo apt-get update -qq 2>/dev/null
+            sudo apt-get install -y $APT_PKG 2>/dev/null \
                 && ok "$DESC installed." \
                 || { fail "apt install failed for: $APT_PKG"; return 1; }
             ;;
         dnf)
-            sudo dnf install -y $DNF_PKG \
+            sudo dnf install -y $DNF_PKG 2>/dev/null \
                 && ok "$DESC installed." \
                 || { fail "dnf install failed for: $DNF_PKG"; return 1; }
             ;;
         yum)
-            sudo yum install -y $DNF_PKG \
+            sudo yum install -y $DNF_PKG 2>/dev/null \
                 && ok "$DESC installed." \
                 || { fail "yum install failed for: $DNF_PKG"; return 1; }
             ;;
         brew)
-            brew install $BREW_PKG \
+            brew install $BREW_PKG 2>/dev/null \
                 && ok "$DESC installed." \
                 || { fail "brew install failed for: $BREW_PKG"; return 1; }
             ;;
         zypper)
-            sudo zypper install -y $ZYPPER_PKG \
+            sudo zypper install -y $ZYPPER_PKG 2>/dev/null \
                 && ok "$DESC installed." \
                 || { fail "zypper install failed for: $ZYPPER_PKG"; return 1; }
             ;;
         pacman)
-            sudo pacman -S --noconfirm $PACMAN_PKG \
+            sudo pacman -S --noconfirm $PACMAN_PKG 2>/dev/null \
                 && ok "$DESC installed." \
                 || { fail "pacman install failed for: $PACMAN_PKG"; return 1; }
             ;;
@@ -111,17 +105,17 @@ install_pkg() {
     esac
 }
 
-# ── Bootstrap pip (tries multiple paths) ──────────────────────────
+# ── Bootstrap pip into a python binary ────────────────────────────
 bootstrap_pip() {
-    local PYTHON_BIN="$1"  # python3 or venv python
+    local PY="$1"
 
-    # 1. ensurepip (built-in to Python 3.4+, fastest)
-    if "$PYTHON_BIN" -m ensurepip --upgrade 2>/dev/null; then
+    # 1. ensurepip
+    if "$PY" -m ensurepip --upgrade 2>/dev/null; then
         ok "pip bootstrapped via ensurepip."
         return 0
     fi
 
-    # 2. get-pip.py via curl or wget
+    # 2. get-pip.py
     warn "ensurepip unavailable — trying get-pip.py..."
     local GET_PIP="/tmp/get-pip-$$.py"
     if command -v curl >/dev/null 2>&1; then
@@ -131,22 +125,116 @@ bootstrap_pip() {
     fi
 
     if [ -f "$GET_PIP" ]; then
-        "$PYTHON_BIN" "$GET_PIP" 2>/dev/null && rm -f "$GET_PIP" \
+        "$PY" "$GET_PIP" 2>/dev/null && rm -f "$GET_PIP" \
             && ok "pip installed via get-pip.py." \
             && return 0
         rm -f "$GET_PIP"
     fi
 
-    # 3. System package manager
-    install_pkg "pip" \
-        "python3-pip" \
-        "python3-pip" \
-        "python3-pip" \
-        "python3-pip" \
-        "python-pip" \
+    # 3. System package
+    install_pkg "pip" "python3-pip" "python3-pip" "python3-pip" "python3-pip" "python-pip" \
         && return 0
 
     return 1
+}
+
+# ── Resolve or install Python 3.12 ────────────────────────────────
+resolve_python() {
+    step "Resolving Python $PYTHON_TARGET"
+
+    # Prefer exact version binaries first
+    for candidate in python3.12 python3 python; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            local ver
+            ver=$("$candidate" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
+            if [ "$ver" = "$PYTHON_TARGET" ]; then
+                PYTHON_BIN=$(command -v "$candidate")
+                ok "Found Python $ver at $PYTHON_BIN"
+                return 0
+            fi
+        fi
+    done
+
+    # Not found — install it
+    warn "Python $PYTHON_TARGET not found. Installing..."
+    case "$PM" in
+        apt)
+            sudo apt-get update -qq 2>/dev/null
+            # Try direct install first (works on Ubuntu 24.04+, Debian 13+)
+            if sudo apt-get install -y python3.12 python3.12-venv python3.12-dev 2>/dev/null; then
+                ok "Python 3.12 installed directly."
+            else
+                warn "Direct install failed — trying deadsnakes PPA..."
+                # Import deadsnakes signing key first (required on Debian 12 Bookworm)
+                sudo apt-get install -y software-properties-common curl gpg 2>/dev/null || true
+                # Import the key
+                curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xF23C5A6CF475977595C89F51BA6932366A755776" \
+                    | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/deadsnakes.gpg 2>/dev/null || true
+                # Detect distro codename — Debian 12 maps to Ubuntu jammy for deadsnakes
+                local CODENAME
+                CODENAME=$(lsb_release -cs 2>/dev/null || echo "")
+                # deadsnakes doesn't have a 'bookworm' suite — use 'jammy' as the target
+                if [ "$CODENAME" = "bookworm" ] || [ "$CODENAME" = "bullseye" ] || [ "$CODENAME" = "buster" ]; then
+                    PPA_SUITE="jammy"
+                else
+                    PPA_SUITE="$CODENAME"
+                fi
+                # Add PPA source
+                echo "deb https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu ${PPA_SUITE} main" \
+                    | sudo tee /etc/apt/sources.list.d/deadsnakes-ppa.list > /dev/null
+                sudo apt-get update -qq 2>/dev/null
+                sudo apt-get install -y python3.12 python3.12-venv python3.12-dev 2>/dev/null \
+                    || die "Could not install Python 3.12. Try manually: sudo apt install python3.12 python3.12-venv"
+            fi
+            ;;
+        dnf)
+            # RHEL 8: Python 3.12 needs EPEL + CRB (CodeReady Builder)
+            # RHEL 9: Available in EPEL or AppStream depending on minor version
+            local RHEL_VER
+            RHEL_VER=$(rpm -E '%{rhel}' 2>/dev/null || echo "0")
+
+            # Enable CRB (required by EPEL on RHEL 8/9)
+            if command -v subscription-manager >/dev/null 2>&1; then
+                sudo subscription-manager repos --enable "codeready-builder-for-rhel-${RHEL_VER}-x86_64-rpms" 2>/dev/null || true
+            fi
+            # Enable CRB via dnf config-manager (works on RHEL 9 and Rocky/Alma)
+            sudo dnf config-manager --set-enabled crb 2>/dev/null || \
+                sudo dnf config-manager --set-enabled powertools 2>/dev/null || true
+
+            # Install EPEL
+            sudo dnf install -y epel-release 2>/dev/null || \
+                sudo dnf install -y "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${RHEL_VER}.noarch.rpm" 2>/dev/null || true
+
+            sudo dnf update -y 2>/dev/null || true
+
+            # Try python3.12 package
+            sudo dnf install -y python3.12 python3.12-devel 2>/dev/null \
+                || sudo dnf install -y python3.12 2>/dev/null \
+                || die "Could not install Python 3.12 via dnf. Try: sudo dnf install python3.12"
+            ;;
+        yum)
+            local RHEL_VER
+            RHEL_VER=$(rpm -E '%{rhel}' 2>/dev/null || echo "0")
+            sudo yum install -y epel-release 2>/dev/null || true
+            sudo yum install -y python3.12 python3.12-devel 2>/dev/null \
+                || die "Could not install Python 3.12 via yum. Try: sudo yum install python3.12"
+            ;;
+        brew)
+            brew install python@3.12 2>/dev/null \
+                || die "Could not install Python 3.12 via brew."
+            ;;
+        *)
+            die "Cannot auto-install Python 3.12 with package manager '$PM'. Install it manually and re-run."
+            ;;
+    esac
+
+    # Re-check after install
+    if command -v python3.12 >/dev/null 2>&1; then
+        PYTHON_BIN=$(command -v python3.12)
+        ok "Python 3.12 installed at $PYTHON_BIN"
+    else
+        die "Python 3.12 installation did not produce a python3.12 binary."
+    fi
 }
 
 # ── Prerequisites ──────────────────────────────────────────────────
@@ -154,73 +242,15 @@ check_prereqs() {
     step "Checking prerequisites"
     detect_pm
 
-    # Python 3
-    if command -v python3 >/dev/null 2>&1; then
-        ok "Python: $(python3 --version)"
-    else
-        install_pkg "Python 3" \
-            "python3 python3-dev" \
-            "python3 python3-devel" \
-            "python3" \
-            "python3 python3-devel" \
-            "python" \
-            || die "Python 3 is required. Install it manually and re-run."
-    fi
-
-    # pip (system level — also needed to bootstrap into venv)
-    if python3 -m pip --version >/dev/null 2>&1; then
-        ok "pip: $(python3 -m pip --version | cut -d' ' -f1-2)"
-    else
-        warn "pip not available for python3."
-        if ask "Attempt to install pip now?"; then
-            echo ""
-            bootstrap_pip python3 \
-                || fail "pip could not be installed. Dependency installation will fail."
-        else
-            fail "pip skipped. Python dependencies cannot be installed."
-        fi
-    fi
-
-    # python3-venv / virtualenv
-    if python3 -m venv --help >/dev/null 2>&1; then
-        ok "python3-venv available"
-    else
-        # RHEL/CentOS: python3-venv doesn't exist — virtualenv or python3 itself
-        # provides venv depending on the version. Try the right package per PM.
-        install_pkg "python3-venv" \
-            "python3-venv python3-full" \
-            "python3" \
-            "python3" \
-            "python3" \
-            "python" \
-            || fail "python3-venv unavailable. Venv creation may fail."
-        # Re-check after install attempt
-        if ! python3 -m venv --help >/dev/null 2>&1; then
-            # On RHEL, venv sometimes needs python3-virtualenv as fallback
-            install_pkg "python3-virtualenv (fallback)" \
-                "python3-virtualenv" \
-                "python3-virtualenv" \
-                "virtualenv" \
-                "python3-virtualenv" \
-                "python-virtualenv" \
-                || fail "Could not install venv support."
-        fi
-    fi
-
     # cmake
     if command -v cmake >/dev/null 2>&1; then
         ok "cmake: $(cmake --version | head -1)"
     else
-        install_pkg "cmake" \
-            "cmake" \
-            "cmake" \
-            "cmake" \
-            "cmake" \
-            "cmake" \
+        install_pkg "cmake" "cmake" "cmake" "cmake" "cmake" "cmake" \
             || warn "cmake not installed. llama-cpp-python will try a pre-built wheel."
     fi
 
-    # C++ compiler — build-essential doesn't always pull g++ on minimal installs
+    # C++ compiler
     if command -v g++ >/dev/null 2>&1 || command -v c++ >/dev/null 2>&1; then
         local CXX_VER
         CXX_VER=$(g++ --version 2>/dev/null | head -1 || c++ --version 2>/dev/null | head -1)
@@ -235,57 +265,57 @@ check_prereqs() {
             || warn "C++ compiler not installed. llama-cpp-python source build will fail."
     fi
 
-    # curl or wget — needed for pip bootstrap and model downloads
+    # curl or wget
     if command -v curl >/dev/null 2>&1; then
         ok "curl available"
     elif command -v wget >/dev/null 2>&1; then
         ok "wget available"
     else
-        install_pkg "curl" \
-            "curl" \
-            "curl" \
-            "curl" \
-            "curl" \
-            "curl" \
+        install_pkg "curl" "curl" "curl" "curl" "curl" "curl" \
             || warn "Neither curl nor wget found. model_pull.sh will not work."
     fi
 }
 
 # ── Virtual environment ────────────────────────────────────────────
 setup_venv() {
-    step "Setting up virtual environment"
+    step "Setting up virtual environment (Python $PYTHON_TARGET)"
 
     if [ ! -d "$VENV_DIR" ]; then
-        if python3 -m venv "$VENV_DIR" 2>/dev/null; then
+        if "$PYTHON_BIN" -m venv "$VENV_DIR" 2>/dev/null; then
             ok "Virtualenv created at $VENV_DIR"
         elif command -v virtualenv >/dev/null 2>&1; then
-            # RHEL fallback: use virtualenv directly
-            virtualenv -p python3 "$VENV_DIR" \
+            virtualenv -p "$PYTHON_BIN" "$VENV_DIR" \
                 && ok "Virtualenv created via virtualenv at $VENV_DIR" \
-                || die "Failed to create virtualenv. Check python3-venv or virtualenv is installed."
+                || die "Failed to create virtualenv. Check python3.12-venv is installed."
         else
             die "Failed to create virtualenv at $VENV_DIR."
         fi
     else
-        ok "Reusing existing virtualenv at $VENV_DIR"
+        # Verify the existing venv is the right Python version
+        local venv_ver
+        venv_ver=$("$VENV_DIR/bin/python" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null || echo "unknown")
+        if [ "$venv_ver" = "$PYTHON_TARGET" ]; then
+            ok "Reusing existing virtualenv at $VENV_DIR (Python $venv_ver)"
+        else
+            warn "Existing venv is Python $venv_ver, not $PYTHON_TARGET. Recreating..."
+            rm -rf "$VENV_DIR"
+            "$PYTHON_BIN" -m venv "$VENV_DIR" \
+                && ok "Virtualenv recreated at $VENV_DIR (Python $PYTHON_TARGET)" \
+                || die "Failed to recreate virtualenv."
+        fi
     fi
 
     PIP="$VENV_DIR/bin/pip"
     PYTHON="$VENV_DIR/bin/python"
 
-    # Repair venv if pip is missing inside it
+    # Repair venv if pip is missing
     if [ ! -f "$PIP" ]; then
-        warn "pip is missing from the virtualenv."
-        if ask "Bootstrap pip into the virtualenv now?"; then
-            echo ""
-            bootstrap_pip "$PYTHON" \
-                || die "Could not bootstrap pip into the virtualenv. Delete $VENV_DIR and re-run."
-        else
-            die "pip is required inside the virtualenv. Cannot continue."
-        fi
+        warn "pip missing from virtualenv — bootstrapping..."
+        bootstrap_pip "$PYTHON" \
+            || die "Could not bootstrap pip into the virtualenv. Delete $VENV_DIR and re-run."
     fi
 
-    # Upgrade pip
+    # Upgrade pip silently
     "$PIP" install --upgrade pip --quiet 2>/dev/null \
         && ok "pip upgraded" \
         || warn "pip upgrade failed — continuing with existing version."
@@ -314,16 +344,17 @@ install_deps() {
         ok "llama-cpp-python already installed — skipping"
     else
         echo ""
-        echo -e "  Installing llama-cpp-python..."
+        echo -e "  ${CYAN}→${RESET}  Installing llama-cpp-python..."
         echo -e "  ${YELLOW}This may take several minutes if building from source.${RESET}"
         echo ""
+
+        # Try pre-built wheel first (CPU — supports Python 3.12)
         if "$PIP" install llama-cpp-python --quiet 2>/dev/null; then
             ok "llama-cpp-python installed (pre-built wheel)"
         else
-            warn "Pre-built wheel unavailable — building from source."
-            warn "cmake and g++ are required for this step."
+            warn "Pre-built wheel unavailable — building from source (requires cmake + g++)."
             echo ""
-            CMAKE_ARGS="-DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS" \
+            CMAKE_ARGS="-DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS" \
                 "$PIP" install llama-cpp-python --no-cache-dir \
                 && ok "llama-cpp-python built from source" \
                 || { fail "llama-cpp-python installation failed."; \
@@ -340,9 +371,9 @@ install_deps() {
 setup_dirs() {
     step "Verifying directory structure"
 
-    mkdir -p "$MODELS_DIR" && ok "server/models/ ready"
+    mkdir -p "$MODELS_DIR"       && ok "server/models/ ready"
     mkdir -p "$SERVER_DIR/sessions" && ok "server/sessions/ ready"
-    mkdir -p "$SERVER_DIR/users" && ok "server/users/ ready"
+    mkdir -p "$SERVER_DIR/users"    && ok "server/users/ ready"
 
     if [ ! -f "$MODELS_DIR/memory.md" ]; then
         cat > "$MODELS_DIR/memory.md" << 'EOF'
@@ -374,8 +405,7 @@ check_model() {
         echo -e "  ${YELLOW}⚠  No model file found in server/models/${RESET}"
         echo ""
         echo "  Run the model acquisition utility:"
-        echo "→ bash model_pull.sh or"
-        echo "               modmodel_pull.sh"
+        echo "  → bash model_pull.sh"
         echo ""
     fi
 }
@@ -388,6 +418,7 @@ finish() {
         echo -e "${GREEN}${BOLD}║           Setup complete!  ✓             ║${RESET}"
         echo -e "${GREEN}${BOLD}╚══════════════════════════════════════════╝${RESET}"
         echo ""
+        echo "  Python:    $PYTHON_TARGET"
         echo "  Virtualenv: $VENV_DIR"
         echo ""
         echo "  Next steps:"
@@ -408,6 +439,7 @@ finish() {
 # ── Main ───────────────────────────────────────────────────────────
 banner
 check_prereqs
+resolve_python
 setup_venv
 install_deps
 setup_dirs
