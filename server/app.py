@@ -198,11 +198,19 @@ async def get_chat_page(request: Request):
 
 # ── User identification ────────────────────────────────────────────
 
-@app.get("/api/user/{user_id}/check")
-async def check_user(user_id: str):
-    if not validate_user_id(user_id):
-        raise HTTPException(status_code=400, detail="Invalid user ID format")
+# Cookie name and lifetime for remembering who's logged in
+USER_COOKIE_NAME = "guildchat_user_id"
+USER_COOKIE_MAX_AGE = 60 * 60 * 24 * 365  # 1 year
 
+
+@app.get("/api/user/current")
+async def get_current_user(request: Request):
+    """Return the user_id stored in the cookie, if any, and whether they're a returning user."""
+    user_id = request.cookies.get(USER_COOKIE_NAME)
+    if not user_id or not validate_user_id(user_id):
+        return JSONResponse({"user_id": None})
+
+    # Verify the user still exists on disk — don't trust a stale cookie pointing at a wiped user
     returning = is_returning_user(user_id)
     sessions = []
     if returning:
@@ -215,6 +223,43 @@ async def check_user(user_id: str):
         "session_count": len(sessions),
         "sessions": sessions,
     })
+
+
+@app.post("/api/user/logout")
+async def logout_user():
+    """Clear the remembered-user cookie. Frontend calls this from the Switch User button."""
+    response = JSONResponse({"ok": True})
+    response.delete_cookie(USER_COOKIE_NAME)
+    return response
+
+
+@app.get("/api/user/{user_id}/check")
+async def check_user(user_id: str):
+    if not validate_user_id(user_id):
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+    returning = is_returning_user(user_id)
+    sessions = []
+    if returning:
+        sm = SessionManager(user_id)
+        sessions = sm.list_sessions()
+
+    response = JSONResponse({
+        "user_id": user_id,
+        "returning": returning,
+        "session_count": len(sessions),
+        "sessions": sessions,
+    })
+    # Remember this user — server-side cookie, persists across browser restarts
+    response.set_cookie(
+        key=USER_COOKIE_NAME,
+        value=user_id,
+        max_age=USER_COOKIE_MAX_AGE,
+        httponly=True,      # JS can't read it — mitigates XSS
+        samesite="lax",     # Sent on normal navigations, blocked on cross-site POSTs
+        secure=False,       # Set True in production behind HTTPS
+    )
+    return response
 
 
 @app.post("/api/chat/start")
