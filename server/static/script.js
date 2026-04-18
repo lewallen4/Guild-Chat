@@ -212,6 +212,12 @@ function initBackendSwitcher() {
 
 // ── ID Gate ────────────────────────────────────────────────────────
 function initIdGate() {
+    // Attach listeners unconditionally so they work after switchUser() too
+    idSubmit.addEventListener('click', submitUserId);
+    userIdInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') submitUserId();
+    });
+
     const saved = localStorage.getItem('guildchat-user-id');
     if (saved) {
         enterApp(saved, false);
@@ -221,11 +227,6 @@ function initIdGate() {
     idGate.classList.remove('hidden');
     appShell.classList.add('hidden');
     userIdInput.focus();
-
-    idSubmit.addEventListener('click', submitUserId);
-    userIdInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter') submitUserId();
-    });
 }
 
 async function submitUserId() {
