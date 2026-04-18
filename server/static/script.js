@@ -212,7 +212,7 @@ function initBackendSwitcher() {
 
 // ── ID Gate ────────────────────────────────────────────────────────
 function initIdGate() {
-    const saved = sessionStorage.getItem('guildchat-user-id');
+    const saved = localStorage.getItem('guildchat-user-id');
     if (saved) {
         enterApp(saved, false);
         return;
@@ -271,7 +271,7 @@ function showIdFeedback(type, text) {
 
 async function enterApp(userId, returning, pastSessions = []) {
     currentUserId = userId;
-    sessionStorage.setItem('guildchat-user-id', userId);
+    localStorage.setItem('guildchat-user-id', userId);
 
     idGate.classList.add('hidden');
     appShell.classList.remove('hidden');
@@ -324,7 +324,7 @@ function switchUser() {
         currentSessionId = null;
     }
     currentUserId = null;
-    sessionStorage.removeItem('guildchat-user-id');
+    localStorage.removeItem('guildchat-user-id');
 
     idFeedback.textContent = '';
     idFeedback.className   = 'id-feedback';
