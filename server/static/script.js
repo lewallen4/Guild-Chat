@@ -211,19 +211,28 @@ function initBackendSwitcher() {
 }
 
 // ── ID Gate ────────────────────────────────────────────────────────
-function initIdGate() {
+async function initIdGate() {
     // Attach listeners unconditionally so they work after switchUser() too
     idSubmit.addEventListener('click', submitUserId);
     userIdInput.addEventListener('keydown', e => {
         if (e.key === 'Enter') submitUserId();
     });
 
-    const saved = localStorage.getItem('guildchat-user-id');
-    if (saved) {
-        enterApp(saved, false);
-        return;
+    // Ask the server if it remembers us from a prior visit (via HttpOnly cookie)
+    try {
+        const res = await fetch('/api/user/current', { credentials: 'same-origin' });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.user_id) {
+                enterApp(data.user_id, data.returning, data.sessions || []);
+                return;
+            }
+        }
+    } catch {
+        // Fall through to showing the gate if /current is unreachable
     }
 
+    // No remembered user — show the login gate
     idGate.classList.remove('hidden');
     appShell.classList.add('hidden');
     userIdInput.focus();
@@ -242,7 +251,7 @@ async function submitUserId() {
     showIdFeedback('loading', 'Checking workspace…');
 
     try {
-        const res  = await fetch(`/api/user/${encodeURIComponent(raw)}/check`);
+        const res  = await fetch(`/api/user/${encodeURIComponent(raw)}/check`, { credentials: 'same-origin' });
         const data = await res.json();
 
         if (!res.ok) {
@@ -272,7 +281,7 @@ function showIdFeedback(type, text) {
 
 async function enterApp(userId, returning, pastSessions = []) {
     currentUserId = userId;
-    localStorage.setItem('guildchat-user-id', userId);
+    // Cookie is set server-side by /api/user/{id}/check — no client storage needed
 
     idGate.classList.add('hidden');
     appShell.classList.remove('hidden');
@@ -319,12 +328,19 @@ async function loadSettingsIntoUI() {
     } catch {}
 }
 
-function switchUser() {
+async function switchUser() {
     if (currentSessionId) {
         navigator.sendBeacon(`/api/chat/${currentSessionId}/end`);
         currentSessionId = null;
     }
     currentUserId = null;
+
+    // Tell the server to forget us — clears the HttpOnly cookie
+    try {
+        await fetch('/api/user/logout', { method: 'POST', credentials: 'same-origin' });
+    } catch {}
+
+    // Clean up any leftover localStorage from the old implementation
     localStorage.removeItem('guildchat-user-id');
 
     idFeedback.textContent = '';
